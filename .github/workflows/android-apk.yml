@@ -1,0 +1,47 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ci/android-apk
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          channel: stable
+          cache: true
+
+      - name: Unpack app source
+        run: |
+          unzip -o lobba-app.zip -d app
+          cp app/lobba-app/mobile/android/app/google-services.json.example app/lobba-app/mobile/android/app/google-services.json
+
+      - name: Resolve dependencies
+        working-directory: app/lobba-app/mobile
+        run: flutter pub get
+
+      - name: Build release APK
+        working-directory: app/lobba-app/mobile
+        run: flutter build apk --release --target=lib/main.dart
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lobba-release-apk
+          path: app/lobba-app/mobile/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
