@@ -29,7 +29,17 @@ jobs:
       - name: Unpack app source
         run: |
           unzip -o lobba-app.zip -d app
-          cp app/lobba-app/mobile/android/app/google-services.json.example app/lobba-app/mobile/android/app/google-services.json
+
+      - name: Write Firebase config and signing key
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          echo "$GOOGLE_SERVICES_JSON" > app/lobba-app/mobile/android/app/google-services.json
+          grep -c project_id app/lobba-app/mobile/android/app/google-services.json
+          echo "$KEYSTORE_B64" | base64 -d > app/lobba-app/mobile/android/app/lobba-upload.jks
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=lobba\nstoreFile=lobba-upload.jks\n' "$STORE_PASSWORD" "$STORE_PASSWORD" > app/lobba-app/mobile/android/key.properties
 
       - name: Resolve dependencies
         working-directory: app/lobba-app/mobile
